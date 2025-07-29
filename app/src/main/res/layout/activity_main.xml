@@ -1,0 +1,114 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/layoutMain"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:padding="20dp"
+    android:orientation="vertical"
+    android:background="#A1E3F9"
+    tools:context=".MainActivity">
+
+    <!-- Título de la app -->
+    <TextView
+        android:text="🌤️ Clima App 🌤️"
+        android:fontFamily="@font/poppins_family"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:textSize="32sp"
+        android:gravity="center"
+        android:layout_marginBottom="10dp"
+        android:padding="14dp"
+        android:elevation="4dp" />
+
+    <!-- Campo de entrada para ciudad -->
+    <EditText
+        android:id="@+id/etCiudad"
+        android:inputType="text"
+        android:hint="🔍 Buscar Ciudad"
+        android:fontFamily="@font/poppins_family"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:padding="10dp"
+        android:background="@drawable/edittext_background"
+        android:layout_marginBottom="12dp"
+        android:elevation="8dp"
+        android:textSize="16sp"/>
+
+    <!-- Botones de acción -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center"
+        android:layout_marginBottom="8dp"
+        android:paddingHorizontal="16dp">
+
+        <Button
+            android:id="@+id/btnBuscar"
+            android:text="🔍 Buscar Clima"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:textSize="14sp"
+            android:layout_marginEnd="8dp"
+            android:backgroundTint="#3498DB"
+            android:textColor="@android:color/white"
+            android:fontFamily="@font/poppins_family"/>
+
+        <Button
+            android:id="@+id/btnUbicacion"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="📍 Ubicación Actual"
+            android:textSize="14sp"
+            android:fontFamily="@font/poppins_family"
+            android:layout_marginStart="8dp"
+            android:backgroundTint="#E67E22"
+            android:textColor="@android:color/white" />
+    </LinearLayout>
+
+    <!-- Card para mostrar información del clima -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:background="@drawable/edittext_background"
+        android:padding="24dp"
+        android:elevation="12dp"
+        android:layout_marginTop="6dp">
+
+        <TextView
+            android:id="@+id/tvTemperatura"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="🌡️ --°C"
+            android:fontFamily="@font/poppins_family"
+            android:textSize="54sp"
+            android:textColor="#E74C3C"
+            android:gravity="center"
+            android:layout_marginBottom="12dp" />
+
+        <TextView
+            android:id="@+id/tvCiudad"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="🏙️ Selecciona una ciudad"
+            android:fontFamily="@font/poppins_family"
+            android:textSize="24sp"
+            android:textColor="#000000"
+            android:gravity="center"
+            android:layout_marginBottom="2dp" />
+    </LinearLayout>
+
+    <!--Espacio para el pronostico extendido (5dias)-->
+
+
+    <!-- Espacio flexible -->
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1" />
+
+</LinearLayout>
