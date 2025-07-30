@@ -12,16 +12,25 @@ interface ClimaApiService {
     suspend fun obtenerClimaPorCiudad(
         @Query("q") ciudad: String,
         @Query("appid") apiKey: String,
-        @Query("units") units: String = "metric",
-        @Query("lang") lang: String = "es"
+        @Query("units") unidades: String = "metric",
+        @Query("lang") idioma: String = "es"
     ): Response<ClimaResponse>
 
-    // 🔮 Nuevo: pronóstico extendido (cada 3 horas por 5 días)
     @GET("forecast")
     suspend fun obtenerPronosticoExtendido(
         @Query("q") ciudad: String,
         @Query("appid") apiKey: String,
-        @Query("units") units: String = "metric",
-        @Query("lang") lang: String = "es"
+        @Query("units") unidades: String = "metric",
+        @Query("lang") idioma: String = "es"
     ): Response<PronosticoResponse>
+
+    @GET("weather")
+    suspend fun obtenerClimaPorCoordenadas(
+        @Query("lat") latitud: Double,
+        @Query("lon") longitud: Double,
+        @Query("appid") apiKey: String,
+        @Query("units") unidades: String = "metric",
+        @Query("lang") idioma: String = "es"
+    ): Response<ClimaResponse>
+
 }

@@ -1,185 +1,166 @@
 package com.example.appdelclima
 
-import android.Manifest
-import android.content.pm.PackageManager
-import android.location.Location
 import android.os.Bundle
 import android.widget.*
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.app.ActivityCompat
-import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import com.android.volley.toolbox.JsonObjectRequest
-import com.android.volley.toolbox.Volley
+import com.example.appdelclima.adapter.FavoritosAdapter
 import com.example.appdelclima.adapter.PronosticoAdapter
 import com.example.appdelclima.api.ClimaApiService
 import com.example.appdelclima.api.RetrofitClient
-import com.example.appdelclima.model.DiaPronostico
-import com.example.appdelclima.model.PronosticoResponse
 import com.example.appdelclima.repository.ClimaRepository
+import com.example.appdelclima.utils.CacheManager
 import com.example.appdelclima.utils.Constants
 import com.example.appdelclima.viewmodel.ClimaViewModel
 import com.example.appdelclima.viewmodel.ClimaViewModelFactory
-import com.google.android.gms.location.FusedLocationProviderClient
-import com.google.android.gms.location.LocationServices
-import com.google.gson.Gson
 
 class MainActivity : AppCompatActivity() {
 
     private lateinit var etCiudad: EditText
     private lateinit var btnBuscar: Button
     private lateinit var btnUbicacion: Button
+
+
+
     private lateinit var tvTemperatura: TextView
     private lateinit var tvCiudad: TextView
-    private lateinit var rvPronostico: RecyclerView
+
+    private lateinit var recyclerFavoritos: RecyclerView
+    private lateinit var favoritosAdapter: FavoritosAdapter
+
+    private lateinit var recyclerPronostico: RecyclerView
     private lateinit var pronosticoAdapter: PronosticoAdapter
-    private lateinit var fusedLocationClient: FusedLocationProviderClient
 
     private val apiKey = Constants.API_KEY
-    private val LOCATION_PERMISSION_REQUEST_CODE = 1001
 
     private val apiService: ClimaApiService by lazy {
         RetrofitClient.getInstance().create(ClimaApiService::class.java)
     }
-    private val repository: ClimaRepository by lazy {
+
+    private val climaRepository: ClimaRepository by lazy {
         ClimaRepository(apiService)
     }
 
     private val climaViewModel: ClimaViewModel by viewModels {
-        ClimaViewModelFactory(repository)
+        ClimaViewModelFactory(climaRepository)
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
+        // Bind views
         etCiudad = findViewById(R.id.etCiudad)
         btnBuscar = findViewById(R.id.btnBuscar)
         btnUbicacion = findViewById(R.id.btnUbicacion)
         tvTemperatura = findViewById(R.id.tvTemperatura)
         tvCiudad = findViewById(R.id.tvCiudad)
-        rvPronostico = findViewById(R.id.recyclerPronostico)
+        recyclerFavoritos = findViewById(R.id.recyclerFavoritos)
+        recyclerPronostico = findViewById(R.id.recyclerPronostico)
 
+        // Setup RecyclerView para favoritos
+        favoritosAdapter = FavoritosAdapter(emptyList()) { ciudadSeleccionada ->
+            etCiudad.setText(ciudadSeleccionada)
+            buscarClimaYPronostico(ciudadSeleccionada)
+        }
+        recyclerFavoritos.layoutManager = LinearLayoutManager(this, LinearLayoutManager.HORIZONTAL, false)
+        recyclerFavoritos.adapter = favoritosAdapter
+        actualizarListaFavoritos()
+
+        // Setup RecyclerView para pronóstico
         pronosticoAdapter = PronosticoAdapter(emptyList())
-        rvPronostico.layoutManager = LinearLayoutManager(this)
-        rvPronostico.adapter = pronosticoAdapter
+        recyclerPronostico.layoutManager = LinearLayoutManager(this)
+        recyclerPronostico.adapter = pronosticoAdapter
 
-        fusedLocationClient = LocationServices.getFusedLocationProviderClient(this)
+        recyclerFavoritos.layoutManager = LinearLayoutManager(this, LinearLayoutManager.HORIZONTAL, false)
 
+// Obtener favoritos guardados
+        val favoritos = FavoritosManager.obtenerFavoritos(this)
+
+        // Crear adapter con favoritos guardados
+        favoritosAdapter = FavoritosAdapter(favoritos) { ciudadSeleccionada ->
+            etCiudad.setText(ciudadSeleccionada)
+            buscarClimaYPronostico(ciudadSeleccionada)
+        }
+
+        recyclerFavoritos.layoutManager = LinearLayoutManager(this, LinearLayoutManager.HORIZONTAL, false)
+        favoritosAdapter = FavoritosAdapter(emptyList()) { ciudad ->
+            etCiudad.setText(ciudad)
+            buscarClimaYPronostico(ciudad)
+        }
+        recyclerFavoritos.adapter = favoritosAdapter
+        actualizarListaFavoritos()
+
+
+
+
+        // Setup RecyclerView para pronóstico
+        pronosticoAdapter = PronosticoAdapter(emptyList())
+        recyclerPronostico.layoutManager = LinearLayoutManager(this)
+        recyclerPronostico.adapter = pronosticoAdapter
+
+
+        // Botón buscar
         btnBuscar.setOnClickListener {
             val ciudad = etCiudad.text.toString().trim()
             if (ciudad.isNotEmpty()) {
-                obtenerClimaYPronostico(ciudad)
+                FavoritosManager.agregarFavorito(this, ciudad)
+                actualizarListaFavoritos()
+                buscarClimaYPronostico(ciudad)
             } else {
                 Toast.makeText(this, "Ingresa una ciudad", Toast.LENGTH_SHORT).show()
             }
         }
 
+        // Botón ubicación - Aquí asumo que tienes LocationHelper o similar para obtener ubicación
         btnUbicacion.setOnClickListener {
-            verificarPermisoUbicacion()
+            // Aquí implementarías lógica para obtener ubicación y llamar climaViewModel
+            Toast.makeText(this, "Funcionalidad de ubicación aún no implementada", Toast.LENGTH_SHORT).show()
         }
 
+        // Observadores LiveData para clima actual
         climaViewModel.climaActual.observe(this) { clima ->
-            tvTemperatura.text = "🌡️ ${clima.main.temp.toInt()}°C"
-            tvCiudad.text = "🏙️ ${clima.name}"
+            if (clima != null) {
+                CacheManager.guardarClima(this, clima)
+                tvTemperatura.text = "🌡️ ${clima.main.temp.toInt()}°C"
+                tvCiudad.text = "🏙️ ${clima.name}"
+            }
         }
 
-        climaViewModel.pronostico.observe(this) { pronostico ->
-            val listaDias: List<DiaPronostico> = transformarPronostico(pronostico)
-            pronosticoAdapter.actualizarDatos(listaDias)
+        // Observador LiveData para pronóstico
+        climaViewModel.pronostico.observe(this) { pronosticoResponse ->
+            if (pronosticoResponse != null) {
+                pronosticoAdapter = PronosticoAdapter(pronosticoResponse.list)
+                recyclerPronostico.adapter = pronosticoAdapter
+            }
         }
 
+        // Observador LiveData para errores
         climaViewModel.error.observe(this) { errorMsg ->
-            if (errorMsg.isNotEmpty()) {
+            if (!errorMsg.isNullOrEmpty()) {
                 Toast.makeText(this, errorMsg, Toast.LENGTH_SHORT).show()
             }
         }
+
+        val ciudadConsultada = etCiudad.text.toString().trim()
+        if (ciudadConsultada.isNotEmpty()) {
+            FavoritosManager.agregarFavorito(this, ciudadConsultada)
+            actualizarListaFavoritos()
+        }
+
+
     }
 
-    private fun obtenerClimaYPronostico(ciudad: String) {
+    private fun buscarClimaYPronostico(ciudad: String) {
         climaViewModel.obtenerClima(ciudad, apiKey)
         climaViewModel.obtenerPronostico(ciudad, apiKey)
     }
 
-    private fun transformarPronostico(pronosticoResponse: PronosticoResponse): List<DiaPronostico> {
-        val listaDiasMapeados = mutableMapOf<String, DiaPronostico>()
-        for (item in pronosticoResponse.list) {
-            val fecha = item.dt_txt.substring(0, 10)
-            if (!listaDiasMapeados.containsKey(fecha)) {
-                val temperatura = item.main.temp
-                val descripcion = item.weather.firstOrNull()?.description ?: "Sin descripción"
-                listaDiasMapeados[fecha] = DiaPronostico(fecha, temperatura, descripcion)
-            }
-        }
-        return listaDiasMapeados.values.toList()
+    private fun actualizarListaFavoritos() {
+        val favoritos = FavoritosManager.obtenerFavoritos(this)
+        favoritosAdapter.actualizarLista(favoritos)
     }
 
-    private fun verificarPermisoUbicacion() {
-        val permiso = ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
-        if (permiso == PackageManager.PERMISSION_GRANTED) {
-            obtenerUbicacionActual()
-        } else {
-            ActivityCompat.requestPermissions(
-                this,
-                arrayOf(Manifest.permission.ACCESS_FINE_LOCATION),
-                LOCATION_PERMISSION_REQUEST_CODE
-            )
-        }
-    }
-
-    private fun obtenerUbicacionActual() {
-        fusedLocationClient.lastLocation.addOnSuccessListener { location: Location? ->
-            if (location != null) {
-                val lat = location.latitude
-                val lon = location.longitude
-                obtenerClimaPorCoordenadas(lat, lon)
-            } else {
-                Toast.makeText(this, "No se pudo obtener la ubicación", Toast.LENGTH_SHORT).show()
-            }
-        }
-    }
-
-    private fun obtenerClimaPorCoordenadas(lat: Double, lon: Double) {
-        val url = "https://api.openweathermap.org/data/2.5/forecast?lat=$lat&lon=$lon&units=metric&lang=es&appid=$apiKey"
-
-        val request = JsonObjectRequest(
-            com.android.volley.Request.Method.GET, url, null,
-            { response ->
-                val gson = Gson()
-                val pronosticoResponse = gson.fromJson(response.toString(), PronosticoResponse::class.java)
-                mostrarPronostico(pronosticoResponse)
-            },
-            {
-                Toast.makeText(this, "Error al obtener el clima por ubicación", Toast.LENGTH_SHORT).show()
-            }
-        )
-
-        Volley.newRequestQueue(this).add(request)
-    }
-
-    private fun mostrarPronostico(pronosticoResponse: PronosticoResponse) {
-        val listaDias = transformarPronostico(pronosticoResponse)
-        pronosticoAdapter.actualizarDatos(listaDias)
-
-        // Mostrar también nombre de ciudad (opcional)
-        tvCiudad.text = "🏙️ ${pronosticoResponse.city.name}"
-        tvTemperatura.text = "🌡️ ${listaDias.firstOrNull()?.temperatura?.toInt() ?: "--"}°C"
-    }
-
-    override fun onRequestPermissionsResult(
-        requestCode: Int,
-        permissions: Array<out String>,
-        grantResults: IntArray
-    ) {
-        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
-        if (requestCode == LOCATION_PERMISSION_REQUEST_CODE) {
-            if ((grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED)) {
-                obtenerUbicacionActual()
-            } else {
-                Toast.makeText(this, "Permiso de ubicación denegado", Toast.LENGTH_SHORT).show()
-            }
-        }
-    }
 }

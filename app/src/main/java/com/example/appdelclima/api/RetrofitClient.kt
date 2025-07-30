@@ -6,14 +6,14 @@ import retrofit2.converter.gson.GsonConverterFactory
 
 object RetrofitClient {
 
+    // Lazy inicialización: se crea solo cuando se usa por primera vez
     private val retrofit: Retrofit by lazy {
         Retrofit.Builder()
-            .baseUrl(Constants.BASE_URL) // ← Usamos la constante
-            .addConverterFactory(GsonConverterFactory.create())
+            .baseUrl(Constants.BASE_URL) // URL base para todas las llamadas
+            .addConverterFactory(GsonConverterFactory.create()) // Convierte JSON a objetos Kotlin
             .build()
     }
 
-    fun getInstance(): Retrofit {
-        return retrofit
-    }
+    // Función para obtener la instancia Retrofit
+    fun getInstance(): Retrofit = retrofit
 }
