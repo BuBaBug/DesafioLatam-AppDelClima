@@ -7,11 +7,11 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.example.appdelclima.adapter.PronosticoAdapter
-import com.example.appdelclima.model.DiaPronostico
 import com.example.appdelclima.model.PronosticoResponse
 import com.example.appdelclima.repository.ClimaRepository
 import com.example.appdelclima.api.ClimaApiService
 import com.example.appdelclima.api.RetrofitClient
+import com.example.appdelclima.model.DiaPronostico
 import com.example.appdelclima.utils.Constants
 import com.example.appdelclima.viewmodel.ClimaViewModel
 import com.example.appdelclima.viewmodel.ClimaViewModelFactory
@@ -41,7 +41,7 @@ class PronosticoActivity : AppCompatActivity() {
 
         recyclerPronostico = findViewById(R.id.recyclerPronostico)
         recyclerPronostico.layoutManager = LinearLayoutManager(this)
-        adapter = PronosticoAdapter(emptyList())
+        adapter = PronosticoAdapter(emptyList<DiaPronostico>())
         recyclerPronostico.adapter = adapter
 
         val ciudad = intent.getStringExtra("ciudad") ?: ""
