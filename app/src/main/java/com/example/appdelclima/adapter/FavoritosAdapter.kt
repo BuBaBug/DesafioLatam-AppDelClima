@@ -19,9 +19,11 @@ class FavoritosAdapter(
                 if (posicion != RecyclerView.NO_POSITION) {
                     onCiudadClick(listaFavoritos[posicion])
                 }
+
             }
         }
     }
+
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): FavoritoViewHolder {
         val view = LayoutInflater.from(parent.context)

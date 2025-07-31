@@ -6,11 +6,11 @@ import android.view.ViewGroup
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 import com.example.appdelclima.R
-import com.example.appdelclima.model.PronosticoItem
-import java.text.SimpleDateFormat
-import java.util.*
+import com.example.appdelclima.model.DiaPronostico
+import com.example.appdelclima.model.PronosticoResponse
 
-class PronosticoAdapter(private var listaPronostico: List<PronosticoItem>) :
+
+class PronosticoAdapter(private var listaPronostico: List<DiaPronostico>) :
     RecyclerView.Adapter<PronosticoAdapter.ViewHolder>() {
 
     class ViewHolder(view: View) : RecyclerView.ViewHolder(view) {
@@ -28,25 +28,40 @@ class PronosticoAdapter(private var listaPronostico: List<PronosticoItem>) :
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
         val pronostico = listaPronostico[position]
 
-        // Fecha (ejemplo: 2025-07-30 12:00:00 → Mar, 30 Jul 12:00)
-        val formatoEntrada = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault())
-        val formatoSalida = SimpleDateFormat("EEE, dd MMM HH:mm", Locale.getDefault())
-        val fecha = formatoEntrada.parse(pronostico.dt_txt)
-        holder.tvFecha.text = fecha?.let { formatoSalida.format(it) } ?: pronostico.dt_txt
+        // Mostrar sólo fecha (yyyy-MM-dd)
+        holder.tvFecha.text = pronostico.fecha
 
-        // Temperatura en grados Celsius
-        val temp = pronostico.main.temp
-        holder.tvTemperatura.text = "🌡️ $temp °C"
+        // Temperatura promedio (redondeada)
+        holder.tvTemperatura.text = "🌡️ ${pronostico.temperatura.toInt()} °C"
 
-        // Descripción del clima
-        val descripcion = pronostico.weather.firstOrNull()?.description ?: "Sin descripción"
-        holder.tvDescripcion.text = descripcion.replaceFirstChar { it.uppercaseChar() }
+        // Descripción capitalizada
+        holder.tvDescripcion.text = pronostico.descripcion.replaceFirstChar { it.uppercaseChar() }
     }
 
     override fun getItemCount(): Int = listaPronostico.size
 
-    fun actualizarDatos(nuevaLista: List<PronosticoItem>) {
+    fun actualizarDatos(nuevaLista: List<DiaPronostico>) {
         listaPronostico = nuevaLista
         notifyDataSetChanged()
     }
+
+    // Función para procesar la lista de PronosticoItem y agrupar por día (5 días)
+    private fun procesarPronostico(pronosticoResponse: PronosticoResponse): List<DiaPronostico> {
+        val agrupado = pronosticoResponse.list.groupBy { it.dt_txt.substring(0, 10) } // Agrupa por fecha "yyyy-MM-dd"
+
+        return agrupado.entries.take(5).map { (fecha, itemsDelDia) ->
+            val tempMin = itemsDelDia.minOf { it.main.temp_min }
+            val tempMax = itemsDelDia.maxOf { it.main.temp_max }
+            val temperaturaPromedio = (tempMin + tempMax) / 2
+
+            val descripcion = itemsDelDia[0].weather[0].description
+
+            DiaPronostico(
+                fecha = fecha,
+                temperatura = temperaturaPromedio,
+                descripcion = descripcion
+            )
+        }
+    }
+
 }

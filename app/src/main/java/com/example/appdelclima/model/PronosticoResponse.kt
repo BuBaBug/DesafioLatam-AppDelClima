@@ -7,6 +7,6 @@ data class PronosticoResponse(
 
 data class PronosticoItem(
     val dt_txt: String,
-    val main: Main,
+    val main: MainPronostico,
     val weather: List<Weather>
 )

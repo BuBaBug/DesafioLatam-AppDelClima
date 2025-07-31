@@ -56,11 +56,15 @@ class PronosticoActivity : AppCompatActivity() {
             finish()
         }
 
+
+
         climaViewModel.pronostico.observe(this) { pronosticoResponse ->
             pronosticoResponse?.let {
-                adapter.actualizarDatos(it.list)  // Pasa la lista de PronosticoItem que espera el adapter
+                val listaProcesada = procesarPronostico(it)
+                adapter.actualizarDatos(listaProcesada)
             }
         }
+
 
         climaViewModel.error.observe(this) { errorMsg ->
             if (!errorMsg.isNullOrEmpty()) {
@@ -70,13 +74,23 @@ class PronosticoActivity : AppCompatActivity() {
     }
 
     private fun procesarPronostico(pronosticoResponse: PronosticoResponse): List<DiaPronostico> {
-        return pronosticoResponse.list.map { item ->
+        val agrupado = pronosticoResponse.list.groupBy { it.dt_txt.substring(0, 10) }
+
+        return agrupado.entries.take(5).map { (fecha, itemsDelDia) ->
+            val tempMin = itemsDelDia.minOf { it.main.temp_min }
+            val tempMax = itemsDelDia.maxOf { it.main.temp_max }
+            val temperaturaPromedio = (tempMin + tempMax) / 2
+
+            val descripcion = itemsDelDia[0].weather[0].description
+
             DiaPronostico(
-                fecha = item.dt_txt,
-                temperatura = item.main.temp,
-                descripcion = item.weather.firstOrNull()?.description ?: "Sin descripción"
+                fecha = fecha,
+                temperatura = temperaturaPromedio,
+                descripcion = descripcion
             )
         }
     }
+
+
 }
 

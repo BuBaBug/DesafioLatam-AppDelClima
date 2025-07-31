@@ -48,6 +48,8 @@ dependencies {
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-play-services:1.7.3")
     implementation("com.google.android.gms:play-services-location:21.0.1")
 
+    implementation("androidx.recyclerview:recyclerview:1.2.1")
+
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.appcompat)
     implementation(libs.material)
